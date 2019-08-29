@@ -1,0 +1,35 @@
+{
+  "name": "ProseMirror Dev Tools",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "Dev Tools Extension for ProseMirror",
+  "icons": {
+    "16": "icon-16.png",
+    "128": "icon-128.png"
+  },
+  "permissions": [
+    "tabs",
+    "declarativeContent",
+    "storage",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "scripts": ["backgroundScript.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "run_at": "document_start",
+      "js": ["inject.js"],
+      "all_frames": true
+    }
+  ],
+  "devtools_page": "devtools.html",
+  "web_accessible_resources": ["proseMirrorDevTools.js"],
+  "externally_connectable": {
+    "matches": ["http://*/*", "https://*/*"]
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+}

@@ -7,6 +7,16 @@ export default class GlobalStateContainer extends Container {
     defaultSize: 0.5
   };
 
+  constructor(props = {}) {
+    super();
+
+    const { opened, defaultSize } = props;
+
+    if (opened || defaultSize) {
+      this.state = Object.assign({}, this.state, { opened, defaultSize });
+    }
+  }
+
   toggleDevTools = () => {
     const { opened, defaultSize } = this.state;
 
