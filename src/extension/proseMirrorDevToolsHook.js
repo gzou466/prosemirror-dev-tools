@@ -1,6 +1,12 @@
-import { filter, forEach, map } from "callbag-basics";
+import { filter, forEach, map, pipe } from "callbag-basics";
 import { stringify } from "flatted/esm";
-import { fromWindowMessages, randomId } from "./helpers";
+
+import {
+  extensionSource,
+  fromWindowMessages,
+  onlyFromExtension,
+  randomId
+} from "./helpers";
 
 const editorViews = {};
 // const listeners = {};
@@ -15,8 +21,10 @@ const hook = {
 
     // init phase
     const { doc, plugins, schema } = editorView.state;
+
     window.postMessage(
       {
+        source: extensionSource,
         type: "init",
         payload: {
           schemaAsJSON: stringify(schema),
@@ -31,6 +39,7 @@ const hook = {
       updateState(state) {
         window.postMessage(
           {
+            source: extensionSource,
             type: "updateState",
             payload: {
               stateAsJSON: stringify(state)
@@ -74,18 +83,22 @@ const hook = {
   // }
 };
 
-Object.defineProperty(global, "__FABRIC_EDITOR_DEVTOOLS_GLOBAL_HOOK__", {
-  value: hook,
-  writable: false
-});
+if (!(typeof window.__FABRIC_EDITOR_DEVTOOLS_GLOBAL_HOOK__ === "object")) {
+  Object.defineProperty(window, "__FABRIC_EDITOR_DEVTOOLS_GLOBAL_HOOK__", {
+    value: hook,
+    writable: false
+  });
+}
 
 // dynamically update extensionShowing flag
 forEach(
   showing =>
     (global.__FABRIC_EDITOR_DEVTOOLS_GLOBAL_HOOK__.extensionShowing = showing)
 )(
-  fromWindowMessages(window),
-  filter(message => message.type === "extension" && !!message.payload.showing),
-  filter(() => !!window.__FABRIC_EDITOR_DEVTOOLS_GLOBAL_HOOK__),
-  map(message => message.payload.showing)
+  pipe(
+    fromWindowMessages(window),
+    onlyFromExtension(),
+    filter(message => message.type === "extension-showing"),
+    map(message => message.payload)
+  )
 );

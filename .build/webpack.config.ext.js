@@ -24,9 +24,9 @@ module.exports = {
     process.env.NODE_ENV === "development" ? "inline-source-map" : undefined,
   entry: {
     inject: path.resolve(__dirname, "../src/extension/inject.js"),
-    proseMirrorDevTools: path.resolve(
+    proseMirrorDevToolsHook: path.resolve(
       __dirname,
-      "../src/extension/proseMirrorDevTools.js"
+      "../src/extension/proseMirrorDevToolsHook.js"
     ),
     backgroundScript: path.resolve(
       __dirname,
@@ -73,12 +73,12 @@ module.exports = {
         copyUnmodified: true
       }
     ),
-    new WriteFilePlugin(),
-    new BundleAnalyzerPlugin({
-      analyzerMode: "static",
-      defaultSizes: "gzip",
-      generateStatsFile: true
-    })
+    new WriteFilePlugin()
+    // new BundleAnalyzerPlugin({
+    //   analyzerMode: "static",
+    //   defaultSizes: "gzip",
+    //   generateStatsFile: true
+    // })
   ],
   module: {
     rules: [
