@@ -152,10 +152,10 @@ export function onlyOfType(types = []) {
 // parameter to choose whether to replay all of them, or only the last emitted one.
 //
 // Concretely in our extension we would use this operator with:
-//   rememberSomeMessages([{type: "init", pick: "all"}, {type: "updateState", pick: "latest"}])
+//   replaySomeMessages([{type: "init", pick: "all"}, {type: "updateState", pick: "latest"}])
 //
 // Easy, no?
-export function rememberSomeMessages(which = []) {
+export function replaySomeMessages(which = []) {
   const types = which.map(config => config.type);
   const picks = which.reduce(
     (acc, config) => Object.assign(acc, { [config.type]: config.pick }),

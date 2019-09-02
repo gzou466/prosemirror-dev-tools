@@ -8,7 +8,7 @@ import {
   fromWindowMessages,
   onlyFromExtension,
   reconnectOnUpgrade,
-  rememberSomeMessages,
+  replaySomeMessages,
   repostChromeMessage,
   repostWindowMessage,
   tap
@@ -27,7 +27,7 @@ document.documentElement.appendChild(script);
 const windowMessages = pipe(
   fromWindowMessages(window),
   onlyFromExtension(),
-  rememberSomeMessages([
+  replaySomeMessages([
     { type: "init", pick: "all" },
     { type: "updateState", pick: "latest" }
   ])
