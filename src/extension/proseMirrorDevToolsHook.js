@@ -11,6 +11,10 @@ import {
 const editorViews = {};
 // const listeners = {};
 
+const cloneObj = obj => {
+  return JSON.parse(JSON.stringify(obj));
+};
+
 const hook = {
   extensionShowing: false,
 
@@ -20,16 +24,61 @@ const hook = {
     editorViews[editorId] = editorView;
 
     // init phase
-    const { doc, plugins, schema } = editorView.state;
+    // const { doc, plugins, schema } = editorView.state;
+
+    const schemaSpec = cloneObj(editorView.state.schema.spec);
+
+    const {
+      composing,
+      composingTimeout,
+      compositionEndedAt,
+      cursorWrapper,
+      domChangeCount,
+      dragging,
+      editable,
+      focused,
+      lastClick,
+      lastKeyCode,
+      lastKeyCodeTime,
+      lastSelectedViewDesc,
+      lastSelectionOrigin,
+      lastSelectionTime,
+      mounted,
+      mouseDown,
+      shiftKey
+    } = editorView;
+
+    const viewAttrs = {
+      composing,
+      composingTimeout,
+      compositionEndedAt,
+      cursorWrapper,
+      domChangeCount,
+      dragging,
+      editable,
+      focused,
+      lastClick,
+      lastKeyCode,
+      lastKeyCodeTime,
+      lastSelectedViewDesc,
+      lastSelectionOrigin,
+      lastSelectionTime,
+      mounted,
+      mouseDown,
+      shiftKey
+    };
 
     window.postMessage(
       {
         source: EXTENSION_SOURCE,
         type: "init",
         payload: {
-          schemaAsJSON: stringify(schema),
-          docAsJSON: stringify(doc),
-          pluginsStateAsJSON: stringify(plugins)
+          // schemaAsJSON: stringify(schema),
+          // docAsJSON: stringify(doc),
+          // pluginsStateAsJSON: stringify(plugins),
+          viewAttrs,
+          state: editorView.state.toJSON(),
+          schemaSpec
         }
       },
       "*"
@@ -42,7 +91,7 @@ const hook = {
             source: EXTENSION_SOURCE,
             type: "updateState",
             payload: {
-              stateAsJSON: stringify(state)
+              state: state.toJSON()
             }
           },
           "*"

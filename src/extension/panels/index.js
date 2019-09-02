@@ -5,10 +5,9 @@ import * as React from "react";
 import * as ReactDom from "react-dom";
 import { Schema } from "prosemirror-model";
 import { EditorState } from "prosemirror-state";
-import { EditorView } from "prosemirror-view";
 import { Provider } from "unstated";
 import { forEach, pipe } from "callbag-basics";
-import { parse } from "flatted/esm";
+import * as OrderedMap from "orderedmap";
 
 import {
   fromChromeRuntimeMessages,
@@ -23,6 +22,10 @@ import GlobalStateContainer from "../../state/global";
 
 const globalState = new GlobalStateContainer({ opened: true, defaultSize: 1 });
 let editorState;
+let initialized = false;
+let schema = null;
+
+globalState.toggleDevTools();
 
 function DevToolsExtension() {
   return (
@@ -32,68 +35,64 @@ function DevToolsExtension() {
   );
 }
 
-function patchSchema(schema) {
-  // ?
+const initHandler = message => {
+  const { schemaSpec, state, viewAttrs } = message.payload;
 
-  return schema;
-}
+  let nodesMap = OrderedMap.from({});
+  let marksMap = OrderedMap.from({});
 
-function patchDocument(schema, document) {
-  document.schema = schema;
-  // ?
+  while (schemaSpec.marks.content.length) {
+    const key = schemaSpec.marks.content.shift();
+    const value = schemaSpec.marks.content.shift();
+    marksMap = marksMap.addToEnd(key, value);
+  }
 
-  return document;
-}
+  while (schemaSpec.nodes.content.length) {
+    const key = schemaSpec.nodes.content.shift();
+    const value = schemaSpec.nodes.content.shift();
+    // HACK don't touch this.
+    if (key === "layoutSection") {
+      delete value.content;
+    }
+    nodesMap = nodesMap.addToEnd(key, value);
+  }
 
-function patchState(schema, editorState) {
-  editorState.schema = schema;
-  // ?
+  schema = new Schema({
+    nodes: nodesMap,
+    marks: marksMap
+  });
 
-  return editorState;
-}
+  const editorView = {
+    state: EditorState.fromJSON({ schema }, state),
+    _props: {
+      dispatchTransaction: () => {}
+    }
+  };
+
+  Object.assign(editorView, viewAttrs);
+
+  return editorView;
+};
 
 forEach(message => {
   const { type, payload } = message;
-  let schema;
-  let initialized = false;
 
   if (type === "init") {
-    debugger;
-    const { schemaAsJSON, docAsJSON, pluginsStateAsJSON } = payload;
-
-    schema = patchSchema(parse(schemaAsJSON));
-    const initialDoc = patchDocument(schema, parse(docAsJSON));
-
     try {
-      const editorView = new EditorView(undefined, {
-        state: EditorState.create({
-          schema: new Schema({
-            nodes: schema.spec.nodes,
-            marks: schema.spec.marks
-          }),
-          doc: initialDoc
-        })
-      });
+      const editorView = initHandler(message);
 
       editorState = new EditorStateContainer(editorView, { EditorState });
-
-      ReactDom.render(<DevToolsExtension />, document.getElementById("root"));
       initialized = true;
+      ReactDom.render(<DevToolsExtension />, document.getElementById("root"));
     } catch (e) {
       console.error("Could not initialize devtools from Editor!", e);
     }
-  }
-
-  if (type === "updateState") {
-    debugger;
-    const { stateAsJSON } = payload;
-
+  } else if (type === "updateState") {
+    const { state } = payload;
     if (!initialized) {
       return;
     }
-
-    const newState = patchState(schema, parse(stateAsJSON));
-
+    const newState = EditorState.fromJSON({ schema }, state);
     editorState.pushNewState(newState);
   }
 })(
