@@ -3,25 +3,57 @@ import { filter, fromEvent, map, pipe } from "callbag-basics";
 // seems to be a transpilation issue from Webpack... dirty fix!
 const fixedFromEvent = fromEvent.default;
 
-// helpers
+// constants
+export const EXTENSION_SOURCE = "prosemirror-devtools-bridge";
+
+// chrome helpers
+
+// When extension is upgraded or disabled and renabled, the content scripts
+// will still be injected, so we have to reconnect them.
+// We listen for an onDisconnect event, and then wait for a second before
+// trying to connect again. Becuase chrome.runtime.connect fires an onDisconnect
+// event if it does not connect, an unsuccessful connection should trigger
+// another attempt, 1 second later.
+export function reconnectOnUpgrade(chrome) {
+  try {
+    let port = chrome.runtime.connect({ name: "reconnect-port" });
+
+    port.onDisconnect.addListener(() => {
+      port = null;
+      // Attempt to reconnect after 1 second
+      setTimeout(() => reconnectOnUpgrade(chrome), 1e3); // 1s
+    });
+  } catch (e) {
+    console.warn("could not auto reconnect extension", e);
+  }
+}
+
+export function injectIntoTab(chrome, tab) {
+  try {
+    const contentScripts = chrome.app.getDetails().content_scripts[0].js;
+    contentScripts.forEach(script =>
+      chrome.tabs.executeScript(tab.id, { file: script })
+    );
+  } catch (e) {
+    console.warn("could not inject into tabs", e);
+  }
+}
+
+export function notifyTabs(chrome, message) {
+  try {
+    chrome.tabs.query({}, tabs =>
+      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, message))
+    );
+  } catch (e) {
+    console.warn("could not notify tabs", e);
+  }
+}
+
+// more generic helpers
 export const randomId = () =>
   Math.random()
     .toString(16)
     .slice(2);
-
-export const extensionSource = "prosemirror-devtools-bridge";
-
-export function notifyTabs(chrome, message) {
-  chrome.tabs.query({}, tabs =>
-    tabs.forEach(tab => {
-      try {
-        chrome.tabs.sendMessage(tab.id, message);
-      } catch (e) {
-        console.warn("could not notify tab", e);
-      }
-    })
-  );
-}
 
 // callbags sources
 export function fromWindowMessages(window) {
@@ -78,7 +110,7 @@ export function onlyFromExtension() {
       }
 
       if (type === 1) {
-        if (typeof data === "object" && data.source === extensionSource) {
+        if (typeof data === "object" && data.source === EXTENSION_SOURCE) {
           sink(type, data);
         } else {
           talkback(1);
@@ -111,6 +143,82 @@ export function onlyOfType(types = []) {
 
       sink(type, data);
     });
+  };
+}
+
+// inspired by https://github.com/ds82/callbag-replay-all
+//
+// But we're replaying only certain messages (based on their type), and there's a "pick"
+// parameter to choose whether to replay all of them, or only the last emitted one.
+//
+// Concretely in our extension we would use this operator with:
+//   rememberSomeMessages([{type: "init", pick: "all"}, {type: "updateState", pick: "latest"}])
+//
+// Easy, no?
+export function rememberSomeMessages(which = []) {
+  const types = which.map(config => config.type);
+  const picks = which.reduce(
+    (acc, config) => Object.assign(acc, { [config.type]: config.pick }),
+    {}
+  );
+
+  let store = [];
+  let sinks = [];
+
+  return source => {
+    let talkback;
+    let done = false;
+
+    source(0, (type, data) => {
+      if (type === 0) {
+        talkback = data;
+        return;
+      }
+
+      if (type === 1) {
+        if (typeof data === "object" && types.indexOf(data.type) !== -1) {
+          const pick = picks[data.type];
+
+          if (pick === "all") {
+            store = [...store, data];
+          } else if (pick === "latest") {
+            store = [...store.filter(entry => entry.type !== data.type), data];
+          }
+        }
+
+        sinks.forEach(sink => sink(1, data));
+      }
+
+      if (type === 2) {
+        done = true;
+        sinks.forEach(sink => sink(2));
+        sinks = [];
+      }
+    });
+
+    return (start, sink) => {
+      if (start !== 0) return;
+      sinks.push(sink);
+
+      sink(0, type => {
+        if (type === 0) return;
+
+        if (type === 1) {
+          talkback(1);
+          return;
+        }
+
+        if (type === 2) {
+          sinks = sinks.filter(s => s !== sink);
+        }
+      });
+
+      store.forEach(entry => sink(1, entry));
+
+      if (done) {
+        sink(2);
+      }
+    };
   };
 }
 

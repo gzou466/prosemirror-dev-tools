@@ -1,27 +1,19 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
-
-const contentScripts = chrome.app.getDetails().content_scripts[0].js;
-
-function injectIntoTab(tab) {
-  contentScripts.forEach(script =>
-    chrome.tabs.executeScript(tab.id, { file: script })
-  );
-}
+import { injectIntoTab } from "./helpers";
 
 chrome.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
   if (reason === "update") {
-    console.log(
-      `Update detected! (previousVersion=${previousVersion}) Reinjecting content scripts...`
-    );
+    console.log(`Update detected! (previousVersion=${previousVersion})`);
 
-    chrome.windows.getAll({ populate: true }, windows =>
-      windows.forEach(window =>
-        window.tabs.forEach(tab => {
-          if (!tab.url.match(/(chrome|https):\/\//gi)) {
-            injectIntoTab(tab);
-          }
-        })
-      )
-    );
+    // chrome.windows.getAll({ populate: true }, windows =>
+    //   windows.forEach(window =>
+    //     window.tabs.forEach(tab => {
+    //       if (!tab.url.match(/(chrome|https):\/\//gi)) {
+    //         injectIntoTab(chrome, tab);
+    //       }
+    //     })
+    //   )
+    // );
   }
 });

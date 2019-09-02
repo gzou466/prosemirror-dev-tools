@@ -2,7 +2,7 @@ import { filter, forEach, map, pipe } from "callbag-basics";
 import { stringify } from "flatted/esm";
 
 import {
-  extensionSource,
+  EXTENSION_SOURCE,
   fromWindowMessages,
   onlyFromExtension,
   randomId
@@ -24,7 +24,7 @@ const hook = {
 
     window.postMessage(
       {
-        source: extensionSource,
+        source: EXTENSION_SOURCE,
         type: "init",
         payload: {
           schemaAsJSON: stringify(schema),
@@ -39,7 +39,7 @@ const hook = {
       updateState(state) {
         window.postMessage(
           {
-            source: extensionSource,
+            source: EXTENSION_SOURCE,
             type: "updateState",
             payload: {
               stateAsJSON: stringify(state)

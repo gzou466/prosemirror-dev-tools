@@ -3,7 +3,7 @@
 import "../resources/icons/icon-16.png";
 import "../resources/icons/icon-128.png";
 
-import { extensionSource, notifyTabs } from "../helpers";
+import { EXTENSION_SOURCE, notifyTabs, reconnectOnUpgrade } from "../helpers";
 
 chrome.devtools.panels.create(
   "ProseMirror",
@@ -12,17 +12,19 @@ chrome.devtools.panels.create(
   panel => {
     panel.onShown.addListener(() =>
       notifyTabs(chrome, {
-        source: extensionSource,
+        source: EXTENSION_SOURCE,
         type: "extension-showing",
         payload: true
       })
     );
     panel.onHidden.addListener(() =>
       notifyTabs(chrome, {
-        source: extensionSource,
+        source: EXTENSION_SOURCE,
         type: "extension-showing",
         payload: false
       })
     );
   }
 );
+
+reconnectOnUpgrade(chrome);

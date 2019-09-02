@@ -205,6 +205,21 @@ export default class EditorStateContainer extends Container {
     });
   }
 
+  pushNewState(newState) {
+    const updatedHistory = false; // for now
+
+    this.setState({
+      state: newState,
+      nodeColors: buildColors(newState.schema),
+      activeMarks: getActiveMarks(newState),
+      history: updatedHistory || this.state.history,
+      selectedHistoryItem: updatedHistory ? 0 : this.state.selectedHistoryItem,
+      historyRolledBackTo: updatedHistory
+        ? false
+        : this.state.historyRolledBackTo
+    });
+  }
+
   activatePicker = () => {
     this.setState({
       nodePicker: Object.assign({}, NODE_PICKER_DEFAULT, { active: true })
