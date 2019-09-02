@@ -99,7 +99,7 @@ forEach(message => {
   pipe(
     fromChromeRuntimeMessages(chrome),
     onlyFromExtension(),
-    onlyOfType(["init", "updateState"]),
-    tap(message => console.log(`Got Editor msg: ${JSON.stringify(message)}`))
+    onlyOfType(["init", "updateState"])
+    // tap(message => console.log(`Got Editor msg: ${JSON.stringify(message)}`))
   )
 );

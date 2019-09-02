@@ -1,5 +1,4 @@
 import { filter, forEach, map, pipe } from "callbag-basics";
-import { stringify } from "flatted/esm";
 
 import {
   EXTENSION_SOURCE,
@@ -9,7 +8,6 @@ import {
 } from "./helpers";
 
 const editorViews = {};
-// const listeners = {};
 
 const cloneObj = obj => {
   return JSON.parse(JSON.stringify(obj));
@@ -22,9 +20,6 @@ const hook = {
     const editorId = randomId();
 
     editorViews[editorId] = editorView;
-
-    // init phase
-    // const { doc, plugins, schema } = editorView.state;
 
     const schemaSpec = cloneObj(editorView.state.schema.spec);
 
@@ -68,14 +63,16 @@ const hook = {
       shiftKey
     };
 
+    console.log(
+      editorView.state.plugins[1].getState(editorView.state),
+      23333333
+    );
+
     window.postMessage(
       {
         source: EXTENSION_SOURCE,
         type: "init",
         payload: {
-          // schemaAsJSON: stringify(schema),
-          // docAsJSON: stringify(doc),
-          // pluginsStateAsJSON: stringify(plugins),
           viewAttrs,
           state: editorView.state.toJSON(),
           schemaSpec
