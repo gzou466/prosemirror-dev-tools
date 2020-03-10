@@ -64,7 +64,24 @@ export function fromWindowMessages(window) {
   );
 }
 
+export function fromChromeDevToolsPort(devToolsPort) {
+  return (start, sink) => {
+    if (start !== 0) return;
+
+    const listener = message => sink(1, message);
+    const talkback = type => {
+      if (type === 2) {
+        devToolsPort.onMessage.removeListener(listener);
+      }
+    };
+
+    devToolsPort.onMessage.addListener(listener);
+    sink(0, talkback);
+  };
+}
+
 export function fromChromeRuntimeMessages(chrome) {
+  console.log("fromChromeRuntimeMessages");
   return (start, sink) => {
     if (start !== 0) return;
 

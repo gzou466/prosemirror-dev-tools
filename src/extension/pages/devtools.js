@@ -3,28 +3,34 @@
 import "../resources/icons/icon-16.png";
 import "../resources/icons/icon-128.png";
 
-import { EXTENSION_SOURCE, notifyTabs, reconnectOnUpgrade } from "../helpers";
+import {
+  NOTIFY_DEV_PANEL_VISIBILITY,
+  PROSEMIRROR_DEVTOOLS_PANEL
+} from "../constants";
 
 chrome.devtools.panels.create(
   "ProseMirror",
   "icon-128.png",
   "panels.html",
   panel => {
-    panel.onShown.addListener(() =>
-      notifyTabs(chrome, {
-        source: EXTENSION_SOURCE,
-        type: "extension-showing",
-        payload: true
-      })
-    );
-    panel.onHidden.addListener(() =>
-      notifyTabs(chrome, {
-        source: EXTENSION_SOURCE,
-        type: "extension-showing",
-        payload: false
-      })
-    );
+    let panelWindow;
+
+    const notifyDevPanelVisibility = visibility => {
+      if (panelWindow && typeof panelWindow.postMessage === "function") {
+        return panelWindow.postMessage({
+          type: NOTIFY_DEV_PANEL_VISIBILITY,
+          source: PROSEMIRROR_DEVTOOLS_PANEL,
+          data: { visibility }
+        });
+      }
+    };
+
+    panel.onShown.addListener(newPanelWindow => {
+      panelWindow = newPanelWindow;
+      notifyDevPanelVisibility(true);
+    });
+    panel.onHidden.addListener(() => {
+      notifyDevPanelVisibility(false);
+    });
   }
 );
-
-reconnectOnUpgrade(chrome);
