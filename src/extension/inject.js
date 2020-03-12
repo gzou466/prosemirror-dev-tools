@@ -2,7 +2,10 @@
 /* eslint-disable no-undef */
 
 import { filter, pipe } from "callbag-basics";
-
+import {
+  PROSEMIRROR_DEVTOOLS_CONTENT,
+  PROSEMIRROR_DEVTOOLS_BACKGROUND
+} from "./constants";
 import {
   fromChromeRuntimeMessages,
   fromWindowMessages,
@@ -14,46 +17,40 @@ import {
   tap
 } from "./helpers";
 
-// inject content script
-const script = document.createElement("script");
-script.setAttribute("type", "text/javascript");
-script.setAttribute(
-  "src",
-  chrome.extension.getURL("proseMirrorDevToolsHook.js")
-);
-document.documentElement.appendChild(script);
+function bootstrap() {
+  console.log("bootstrap");
+  // inject content script
+  const script = document.createElement("script");
+  script.setAttribute("type", "text/javascript");
+  script.setAttribute(
+    "src",
+    chrome.extension.getURL("proseMirrorDevToolsHook.js")
+  );
 
-// record window messages and replay them selectively when extension is showing
-const windowMessages = pipe(
-  fromWindowMessages(window),
-  onlyFromExtension(),
-  replaySomeMessages([
-    { type: "init", pick: "all" },
-    { type: "updateState", pick: "latest" }
-  ])
-);
+  window.addEventListener("message", function({ data }) {
+    if (
+      data &&
+      typeof data === "object" &&
+      data.source === PROSEMIRROR_DEVTOOLS_CONTENT
+    ) {
+      chrome.runtime.sendMessage(data);
+    }
+  });
 
-// this is active only when extension is showing
-let repostToChromeMessage = null;
+  chrome.runtime.onMessage.addListener(message => {
+    if (
+      message &&
+      typeof message === "object" &&
+      message.source === PROSEMIRROR_DEVTOOLS_BACKGROUND
+    ) {
+      window.postMessage(message);
+    }
+  });
 
-// relay extension messages to content script
-repostWindowMessage(window)(
-  pipe(
-    fromChromeRuntimeMessages(chrome),
-    onlyFromExtension(),
-    tap(message => {
-      if (message.type === "extension-showing") {
-        if (message.payload) {
-          console.log("Extension showing...");
-          repostToChromeMessage = repostChromeMessage(chrome)(windowMessages);
-          return;
-        }
-        console.log("Extension hiding...");
-        repostToChromeMessage = null;
-      }
-    })
-  )
-);
+  document.documentElement.appendChild(script);
+}
+
+bootstrap();
 
 // reconnect content script on extension upgrade
 reconnectOnUpgrade(chrome);

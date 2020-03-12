@@ -36,8 +36,8 @@ export default function DevToolsExpanded() {
               <Tabs onSelect={selectTab} selectedIndex={tabIndex}>
                 <TabList>
                   <Tab index="state">State</Tab>
-                  <Tab index="history">History</Tab>
-                  <Tab index="plugins">Plugins</Tab>
+                  {/* <Tab index="history">History</Tab>
+                  <Tab index="plugins">Plugins</Tab> */}
                   <Tab index="schema">Schema</Tab>
                   <Tab index="structure">Structure</Tab>
                 </TabList>
@@ -47,10 +47,10 @@ export default function DevToolsExpanded() {
                     switch (index) {
                       case "state":
                         return <StateTab />;
-                      case "history":
-                        return <HistoryTab />;
-                      case "plugins":
-                        return <PluginsTab />;
+                      // case "history":
+                      //   return <HistoryTab />;
+                      // case "plugins":
+                      //   return <PluginsTab />;
                       case "schema":
                         return <SchemaTab />;
                       case "structure":
