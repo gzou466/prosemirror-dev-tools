@@ -170,32 +170,6 @@ const setupHook = () => {
   }
 };
 
-// function pmDevToolsMessagesHandler({ data }) {
-//   if (
-//     data &&
-//     typeof data === "object" &&
-//     data.source === PROSEMIRROR_DEVTOOLS_BACKGROUND
-//   ) {
-//     if (data.type === NOTIFY_DEV_PANEL_VISIBILITY) {
-//       if (data.data.visibility) {
-//         setupHook();
-//       } else if (isHookInitialized) {
-//         clearMutationObserver();
-//       }
-//     }
-//   }
-// }
-
-// window.addEventListener("message", pmDevToolsMessagesHandler);
-
-// document.addEventListener("visibilitychange", function() {
-//   if (document.hidden) {
-//     clearMutationObserver();
-//   } else {
-//     setupHook();
-//   }
-// });
-
 // dynamically update extensionShowing flag
 forEach(visibility => {
   if (visibility) {
